@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Product, Platform } from '../types';
+import { Product } from '../types';
 import { mockData } from '../data/mockData';
 import { 
   calculateEstimatedReleaseDate, 
