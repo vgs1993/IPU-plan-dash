@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Product, Platform, Phase, Milestone, MilestoneType } from '../types';
 import { mockData } from '../data/mockData';
-import { generateCurrentTimeline, shiftTimeline } from '../utils/timeline';
+import { generateCurrentTimeline } from '../utils/timeline';
 import { AddPlatformModal, AddProductModal } from './AddModals';
 import { AddMilestoneModal } from './AddMilestoneModal';
 import { EditMilestoneModal } from './EditMilestoneModal';
@@ -99,7 +99,10 @@ export const TimelinePlanner: React.FC<TimelinePlannerProps> = ({ selectedPlatfo
     if (!timelineDatesElement) return;
 
     const handleDatesScroll = () => {
-      // Find all timeline-cells-container elements and sync their scroll position
+      // Update slider position when dates header scrolls
+      setTimelineScrollPosition(timelineDatesElement.scrollLeft);
+      
+      // Sync all timeline-cells-container elements
       const timelineCellsContainers = document.querySelectorAll('.timeline-cells-container');
       timelineCellsContainers.forEach((container) => {
         if (container !== timelineDatesElement) {
@@ -111,7 +114,8 @@ export const TimelinePlanner: React.FC<TimelinePlannerProps> = ({ selectedPlatfo
     const handleCellsScroll = (event: Event) => {
       const target = event.target as HTMLElement;
       if (target.classList.contains('timeline-cells-container')) {
-        // Sync dates container with this cells container
+        // Update slider position and sync dates container
+        setTimelineScrollPosition(target.scrollLeft);
         timelineDatesElement.scrollLeft = target.scrollLeft;
         
         // Sync all other cells containers
@@ -126,16 +130,16 @@ export const TimelinePlanner: React.FC<TimelinePlannerProps> = ({ selectedPlatfo
 
     // Add event listeners
     timelineDatesElement.addEventListener('scroll', handleDatesScroll);
-    document.addEventListener('scroll', handleCellsScroll, true); // Use capture phase
+    document.addEventListener('scroll', handleCellsScroll, true);
 
     return () => {
       timelineDatesElement.removeEventListener('scroll', handleDatesScroll);
       document.removeEventListener('scroll', handleCellsScroll, true);
     };
-  }, [products]); // Re-run when products change
+  }, [products]);
   
   // Load timeline state from localStorage
-  const [timeline, setTimeline] = useState(() => {
+  const [timeline] = useState(() => {
     const { startWeeks, totalWeeks } = LocalStorageService.loadTimelineState();
     return generateCurrentTimeline(startWeeks, totalWeeks);
   });
@@ -164,19 +168,51 @@ export const TimelinePlanner: React.FC<TimelinePlannerProps> = ({ selectedPlatfo
     });
   }, [expandedPlatforms]);
 
-  useEffect(() => {
-    // Save timeline state when timeline changes
-    const timelineState = {
-      startWeeks: 2, // You can track this based on your timeline logic
-      totalWeeks: timeline.weeks.length
-    };
-    LocalStorageService.saveTimelineState(timelineState);
-  }, [timeline]);
-  
-  // Navigate timeline left/right
-  const navigateTimeline = useCallback((direction: 'left' | 'right') => {
-    setTimeline(currentTimeline => shiftTimeline(currentTimeline, direction, 4));
+  // Timeline scroll position state
+  const [timelineScrollPosition, setTimelineScrollPosition] = useState(0);
+  const [timelineScrollMax, setTimelineScrollMax] = useState(1000);
+
+  // Handle bottom scroll slider changes
+  const handleScrollSliderChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const scrollValue = parseInt(event.target.value);
+    setTimelineScrollPosition(scrollValue);
+    
+    // Apply scroll to all timeline containers
+    const timelineDatesElement = timelineDatesRef.current;
+    if (timelineDatesElement) {
+      timelineDatesElement.scrollLeft = scrollValue;
+      
+      // Sync all grid containers
+      const timelineCellsContainers = document.querySelectorAll('.timeline-cells-container');
+      timelineCellsContainers.forEach((container) => {
+        (container as HTMLElement).scrollLeft = scrollValue;
+      });
+    }
   }, []);
+
+  // Update scroll max value when timeline changes
+  useEffect(() => {
+    const timelineDatesElement = timelineDatesRef.current;
+    if (timelineDatesElement) {
+      const maxScroll = Math.max(0, timelineDatesElement.scrollWidth - timelineDatesElement.clientWidth);
+      setTimelineScrollMax(maxScroll);
+    }
+  }, [timeline]);
+
+  // Sync slider position when user manually scrolls
+  useEffect(() => {
+    const timelineDatesElement = timelineDatesRef.current;
+    if (!timelineDatesElement) return;
+
+    const handleManualScroll = () => {
+      setTimelineScrollPosition(timelineDatesElement.scrollLeft);
+    };
+
+    timelineDatesElement.addEventListener('scroll', handleManualScroll);
+    return () => {
+      timelineDatesElement.removeEventListener('scroll', handleManualScroll);
+    };
+  }, [timeline]);
 
   // Toggle platform expansion
   const togglePlatform = (platformId: string) => {
@@ -461,24 +497,10 @@ export const TimelinePlanner: React.FC<TimelinePlannerProps> = ({ selectedPlatfo
           </div>
         </div>
         
-        <div className="timeline-navigation">
-          <button 
-            className="nav-btn"
-            onClick={() => navigateTimeline('left')}
-            title="Previous weeks"
-          >
-            ← Previous
-          </button>
+        <div className="timeline-period-display">
           <span className="timeline-period">
             {timeline.weeks[0]?.startDate.toLocaleDateString()} - {timeline.weeks[timeline.weeks.length - 1]?.endDate.toLocaleDateString()}
           </span>
-          <button 
-            className="nav-btn"
-            onClick={() => navigateTimeline('right')}
-            title="Next weeks"
-          >
-            Next →
-          </button>
         </div>
       </div>
 
@@ -545,6 +567,19 @@ export const TimelinePlanner: React.FC<TimelinePlannerProps> = ({ selectedPlatfo
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Bottom Timeline Scroll Slider */}
+      <div className="timeline-scroll-control">
+        <input
+          type="range"
+          min="0"
+          max={timelineScrollMax}
+          value={timelineScrollPosition}
+          onChange={handleScrollSliderChange}
+          className="timeline-scroll-slider"
+          title="Scroll timeline horizontally"
+        />
       </div>
       
       {/* Modals */}
