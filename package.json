@@ -6,23 +6,30 @@
   "description": "IPU Program Planner - React TypeScript application for managing program planning across multiple platforms and products",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YOUR_USERNAME/ipu-planner.git"
+    "url": "git+https://github.com/vgs1993/IPU-plan-dash.git"
   },
-  "keywords": ["react", "typescript", "planning", "dashboard", "microsoft"],
+  "keywords": [
+    "react",
+    "typescript",
+    "planning",
+    "dashboard",
+    "microsoft"
+  ],
   "author": "Microsoft",
   "license": "UNLICENSED",
-  "homepage": "https://YOUR_USERNAME.github.io/ipu-planner",
+  "homepage": "https://vgs1993.github.io/IPU-plan-dash",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "date-fns": "^2.30.0",
     "lucide-react": "^0.294.0",
-    "date-fns": "^2.30.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
@@ -33,6 +40,7 @@
     "eslint": "^8.55.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "gh-pages": "^6.3.0",
     "typescript": "^5.2.2",
     "vite": "^5.0.8"
   }
