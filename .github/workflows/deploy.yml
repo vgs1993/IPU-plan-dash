@@ -28,7 +28,18 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm cache clean --force
+          npm install
+          
+      - name: Debug package.json
+        run: |
+          echo "Node version:"
+          node --version
+          echo "NPM version:"
+          npm --version
+          echo "Package.json scripts:"
+          cat package.json | grep -A 10 '"scripts"'
         
       - name: Build
         run: npm run build
